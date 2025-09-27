@@ -1,5 +1,6 @@
 import axios from "axios";
 import { authService } from "./auth";
+import { API_BASE_URL } from "../config";
 
 // ClickUp API Types
 export interface ClickUpWorkspace {
@@ -180,7 +181,6 @@ export interface CreateTaskDto {
 }
 
 // API Service
-const API_BASE_URL = "http://localhost:3000";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
