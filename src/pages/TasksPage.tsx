@@ -7,11 +7,20 @@ import {
   AlertCircle,
   Calendar,
   User,
-  Trash2,
   ExternalLink,
+  Flag,
 } from "lucide-react";
 import { ClickUpApiService, type ClickUpTask } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
 
 const TasksPage: React.FC = () => {
   const { workspaceId, spaceId, listId } = useParams<{
@@ -25,12 +34,12 @@ const TasksPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const canCreate = user?.role === "ADMIN" || user?.role === "EDITOR";
-  const canDelete = user?.role === "ADMIN";
 
   useEffect(() => {
     if (listId) {
       loadTasks();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listId]);
 
   const loadTasks = async () => {
@@ -49,35 +58,39 @@ const TasksPage: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (
+    status: string
+  ): "default" | "secondary" | "destructive" | "outline" => {
     switch (status.toLowerCase()) {
       case "to do":
       case "open":
-        return "bg-gray-100 text-gray-800";
+        return "outline";
       case "in progress":
-        return "bg-blue-100 text-blue-800";
+        return "default";
       case "complete":
       case "closed":
-        return "bg-green-100 text-green-800";
+        return "secondary";
       case "review":
-        return "bg-yellow-100 text-yellow-800";
+        return "outline";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "secondary";
     }
   };
 
-  const getPriorityColor = (priority: number) => {
+  const getPriorityVariant = (
+    priority: number
+  ): "default" | "secondary" | "destructive" | "outline" => {
     switch (priority) {
       case 1:
-        return "bg-red-100 text-red-800";
+        return "destructive";
       case 2:
-        return "bg-orange-100 text-orange-800";
+        return "default";
       case 3:
-        return "bg-yellow-100 text-yellow-800";
+        return "secondary";
       case 4:
-        return "bg-green-100 text-green-800";
+        return "outline";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "secondary";
     }
   };
 
@@ -98,10 +111,15 @@ const TasksPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="w-6 h-6 animate-spin text-clickup-primary" />
-          <span className="text-gray-600">Loading tasks...</span>
+      <div className="flex items-center justify-center min-h-96">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="text-center">
+            <p className="text-lg font-medium text-foreground">Loading tasks</p>
+            <p className="text-sm text-muted-foreground">
+              Please wait while we fetch your data
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -109,168 +127,185 @@ const TasksPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Error Loading Tasks
-          </h3>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button onClick={loadTasks} className="btn btn-primary">
-            Try Again
-          </button>
-        </div>
+      <div className="flex items-center justify-center min-h-96">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-destructive" />
+            </div>
+            <CardTitle className="text-destructive">
+              Error Loading Tasks
+            </CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <Button onClick={loadTasks} className="w-full">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tasks</h1>
-          <p className="text-gray-600 mt-2">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Tasks
+          </h1>
+          <p className="text-lg text-muted-foreground">
             {canCreate
               ? "Manage and track your tasks"
               : "View your tasks (read-only mode)"}
           </p>
         </div>
         {canCreate && (
-          <button
+          <Button
             disabled
-            className="btn btn-secondary flex items-center space-x-2 opacity-50 cursor-not-allowed"
+            variant="outline"
+            className="opacity-50"
             title="This feature is coming soon"
           >
-            <Plus className="w-4 h-4" />
-            <span>Create Task (Coming Soon)</span>
-          </button>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Task
+          </Button>
         )}
       </div>
 
       {tasks.length === 0 ? (
-        <div className="text-center py-12">
-          <CheckSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No Tasks Found
-          </h3>
-          <p className="text-gray-600 mb-4">
-            {canCreate
-              ? "No tasks in this list yet."
-              : "No tasks available in this list."}
-          </p>
-        </div>
+        <Card className="py-16">
+          <CardContent className="text-center">
+            <div className="mx-auto mb-6 w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+              <CheckSquare className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <CardTitle className="mb-2">No Tasks Found</CardTitle>
+            <CardDescription className="max-w-sm mx-auto mb-6">
+              {canCreate
+                ? "No tasks in this list yet. Create your first task to get started."
+                : "No tasks available in this list."}
+            </CardDescription>
+            {canCreate && (
+              <Button disabled variant="outline" className="opacity-50">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Task
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {tasks.map((task) => (
-            <div
+            <Card
               key={task.id}
-              className="card p-6 hover:shadow-lg transition-shadow duration-200"
+              className="hover:shadow-lg transition-all duration-200 hover:scale-[1.01]"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {task.name}
-                      </h3>
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-xl mb-2 leading-tight">
+                      {task.name}
+                    </CardTitle>
+                    {task.description && (
+                      <CardDescription className="text-base line-clamp-2 mb-4">
+                        {task.description}
+                      </CardDescription>
+                    )}
 
-                      {task.description && (
-                        <p className="text-gray-600 mb-3 line-clamp-2">
-                          {task.description}
-                        </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Status */}
+                      <Badge variant={getStatusVariant(task.status.status)}>
+                        {task.status.status}
+                      </Badge>
+
+                      {/* Priority */}
+                      {task.priority && task.priority.priority && (
+                        <Badge
+                          variant={getPriorityVariant(
+                            parseInt(task.priority.priority)
+                          )}
+                        >
+                          <Flag className="w-3 h-3 mr-1" />
+                          {getPriorityText(parseInt(task.priority.priority))}
+                        </Badge>
                       )}
 
-                      <div className="flex flex-wrap items-center gap-3 mb-3">
-                        {/* Status */}
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                            task.status.status
-                          )}`}
+                      {/* Due Date */}
+                      {task.due_date && (
+                        <Badge
+                          variant="outline"
+                          className="text-muted-foreground"
                         >
-                          {task.status.status}
-                        </span>
-
-                        {/* Priority */}
-                        {task.priority && task.priority.priority && (
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(
-                              parseInt(task.priority.priority)
-                            )}`}
-                          >
-                            {getPriorityText(parseInt(task.priority.priority))}
-                          </span>
-                        )}
-
-                        {/* Due Date */}
-                        {task.due_date && (
-                          <div className="flex items-center space-x-1 text-sm text-gray-600">
-                            <Calendar className="w-4 h-4" />
-                            <span>
-                              {new Date(
-                                parseInt(task.due_date)
-                              ).toLocaleDateString()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Assignees */}
-                      {task.assignees && task.assignees.length > 0 && (
-                        <div className="flex items-center space-x-2 mb-3">
-                          <User className="w-4 h-4 text-gray-400" />
-                          <div className="flex space-x-1">
-                            {task.assignees.map((assignee) => (
-                              <div
-                                key={assignee.id}
-                                className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-white font-semibold"
-                                style={{ backgroundColor: assignee.color }}
-                                title={assignee.username || "Unknown User"}
-                              >
-                                {(assignee.username || "U")
-                                  .charAt(0)
-                                  .toUpperCase()}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                          <Calendar className="w-3 h-3 mr-1" />
+                          {new Date(
+                            parseInt(task.due_date)
+                          ).toLocaleDateString()}
+                        </Badge>
                       )}
-
-                      <div className="flex items-center space-x-3">
-                        <Link
-                          to={`/workspace/${workspaceId}/space/${spaceId}/list/${listId}/task/${task.id}`}
-                          className="btn btn-primary text-sm flex items-center space-x-1"
-                        >
-                          <span>View Details</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </Link>
-
-                        {task.url && (
-                          <a
-                            href={task.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-secondary text-sm flex items-center space-x-1"
-                          >
-                            <span>Open in ClickUp</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>
+              </CardHeader>
 
-                {canDelete && (
-                  <button
-                    disabled
-                    className="p-1 text-gray-300 cursor-not-allowed ml-4"
-                    title="Delete function is coming soon"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
+              <CardContent className="pt-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    {/* Assignees */}
+                    {task.assignees && task.assignees.length > 0 && (
+                      <div className="flex items-center space-x-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <div className="flex -space-x-1">
+                          {task.assignees.slice(0, 3).map((assignee) => (
+                            <div
+                              key={assignee.id}
+                              className="w-7 h-7 rounded-full flex items-center justify-center text-xs text-white font-bold border-2 border-background"
+                              style={{
+                                backgroundColor: assignee.color || "#6B7280",
+                              }}
+                              title={assignee.username || "Unknown User"}
+                            >
+                              {(assignee.username || "U")
+                                .charAt(0)
+                                .toUpperCase()}
+                            </div>
+                          ))}
+                          {task.assignees.length > 3 && (
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs text-muted-foreground bg-muted border-2 border-background">
+                              +{task.assignees.length - 3}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Button asChild size="sm">
+                      <Link
+                        to={`/workspace/${workspaceId}/space/${spaceId}/list/${listId}/task/${task.id}`}
+                      >
+                        View Details
+                        <ExternalLink className="w-3 h-3 ml-1" />
+                      </Link>
+                    </Button>
+
+                    {task.url && (
+                      <Button asChild variant="outline" size="sm">
+                        <a
+                          href={task.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          ClickUp
+                          <ExternalLink className="w-3 h-3 ml-1" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

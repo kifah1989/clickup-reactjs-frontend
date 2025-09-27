@@ -1,23 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Loader2, 
-  AlertCircle, 
-  Calendar, 
-  ExternalLink, 
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  ArrowLeft,
+  Loader2,
+  AlertCircle,
+  Calendar,
+  ExternalLink,
   Edit3,
-  CheckSquare,
-  Clock,
-  Target
-} from 'lucide-react';
-import { ClickUpApiService, type ClickUpTask } from '../services/api';
+  Flag,
+  Users,
+  Tag,
+  MapPin,
+  Timer,
+} from "lucide-react";
+import { ClickUpApiService, type ClickUpTask } from "../services/api";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
 
 const TaskDetailPage: React.FC = () => {
-  const { workspaceId, spaceId, listId, taskId } = useParams<{ 
-    workspaceId: string; 
-    spaceId: string; 
-    listId: string; 
+  const { workspaceId, spaceId, listId, taskId } = useParams<{
+    workspaceId: string;
+    spaceId: string;
+    listId: string;
     taskId: string;
   }>();
   const navigate = useNavigate();
@@ -29,75 +40,80 @@ const TaskDetailPage: React.FC = () => {
     if (taskId) {
       loadTask();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId]);
 
   const loadTask = async () => {
     if (!taskId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
       const taskData = await ClickUpApiService.getTaskById(taskId);
       setTask(taskData);
     } catch (err) {
-      setError('Failed to load task. Please try again.');
-      console.error('Error loading task:', err);
+      setError("Failed to load task. Please try again.");
+      console.error("Error loading task:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (
+    status: string
+  ): "default" | "secondary" | "destructive" | "outline" => {
     switch (status.toLowerCase()) {
-      case 'to do':
-      case 'open':
-        return 'bg-gray-100 text-gray-800';
-      case 'in progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'complete':
-      case 'closed':
-        return 'bg-green-100 text-green-800';
-      case 'review':
-        return 'bg-yellow-100 text-yellow-800';
+      case "to do":
+      case "open":
+        return "outline";
+      case "in progress":
+        return "default";
+      case "complete":
+      case "closed":
+        return "secondary";
+      case "review":
+        return "outline";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "secondary";
     }
   };
 
-  const getPriorityColor = (priority: number) => {
+  const getPriorityVariant = (
+    priority: number
+  ): "default" | "secondary" | "destructive" | "outline" => {
     switch (priority) {
       case 1:
-        return 'bg-red-100 text-red-800';
+        return "destructive";
       case 2:
-        return 'bg-orange-100 text-orange-800';
+        return "default";
       case 3:
-        return 'bg-yellow-100 text-yellow-800';
+        return "secondary";
       case 4:
-        return 'bg-green-100 text-green-800';
+        return "outline";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "secondary";
     }
   };
 
   const getPriorityText = (priority: number) => {
     switch (priority) {
       case 1:
-        return 'Urgent';
+        return "Urgent";
       case 2:
-        return 'High';
+        return "High";
       case 3:
-        return 'Normal';
+        return "Normal";
       case 4:
-        return 'Low';
+        return "Low";
       default:
-        return 'None';
+        return "None";
     }
   };
 
   const formatTime = (milliseconds: number) => {
     const hours = Math.floor(milliseconds / (1000 * 60 * 60));
     const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m`;
     }
@@ -106,10 +122,15 @@ const TaskDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="w-6 h-6 animate-spin text-clickup-primary" />
-          <span className="text-gray-600">Loading task...</span>
+      <div className="flex items-center justify-center min-h-96">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="text-center">
+            <p className="text-lg font-medium text-foreground">Loading task</p>
+            <p className="text-sm text-muted-foreground">
+              Please wait while we fetch the details
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -117,66 +138,84 @@ const TaskDetailPage: React.FC = () => {
 
   if (error || !task) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Task</h3>
-          <p className="text-gray-600 mb-4">{error || 'Task not found'}</p>
-          <div className="space-x-3">
-            <button onClick={loadTask} className="btn btn-primary">
+      <div className="flex items-center justify-center min-h-96">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-destructive" />
+            </div>
+            <CardTitle className="text-destructive">
+              Error Loading Task
+            </CardTitle>
+            <CardDescription>{error || "Task not found"}</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-3">
+            <Button onClick={loadTask} className="w-full">
               Try Again
-            </button>
-            <button 
-              onClick={() => navigate(`/workspace/${workspaceId}/space/${spaceId}/list/${listId}/tasks`)}
-              className="btn btn-secondary"
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                navigate(
+                  `/workspace/${workspaceId}/space/${spaceId}/list/${listId}/tasks`
+                )
+              }
+              className="w-full"
             >
               Back to Tasks
-            </button>
-          </div>
-        </div>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="space-y-8">
       {/* Header */}
-      <div className="mb-8 flex justify-between items-start">
+      <div className="flex items-start justify-between">
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigate(`/workspace/${workspaceId}/space/${spaceId}/list/${listId}/tasks`)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              navigate(
+                `/workspace/${workspaceId}/space/${spaceId}/list/${listId}/tasks`
+              )
+            }
             title="Back to tasks"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Task Details</h1>
-            <p className="text-gray-600 mt-1">View task information (read-only mode)</p>
+          </Button>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              Task Details
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              View detailed task information
+            </p>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           {task.url && (
-            <a
-              href={task.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-secondary flex items-center space-x-2"
-            >
-              <span>Open in ClickUp</span>
-              <ExternalLink className="w-4 h-4" />
-            </a>
+            <Button variant="outline" asChild>
+              <a href={task.url} target="_blank" rel="noopener noreferrer">
+                Open in ClickUp
+                <ExternalLink className="w-4 h-4 ml-2" />
+              </a>
+            </Button>
           )}
-          
-          <button
+
+          <Button
             disabled
-            className="btn btn-secondary flex items-center space-x-2 opacity-50 cursor-not-allowed"
+            variant="outline"
+            className="opacity-50"
             title="Edit functionality is currently disabled"
           >
-            <Edit3 className="w-4 h-4" />
-            <span>Edit Task (Disabled)</span>
-          </button>
+            <Edit3 className="w-4 h-4 mr-2" />
+            Edit Task
+          </Button>
         </div>
       </div>
 
@@ -184,180 +223,262 @@ const TaskDetailPage: React.FC = () => {
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Task Name */}
-          <div className="card p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Task Name
-            </label>
-            <h2 className="text-2xl font-semibold text-gray-900">{task.name}</h2>
-          </div>
+          {/* Task Name & Status */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-2xl mb-3">{task.name}</CardTitle>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={getStatusVariant(task.status.status)}>
+                      {task.status.status}
+                    </Badge>
+                    {task.priority && task.priority.priority && (
+                      <Badge
+                        variant={getPriorityVariant(
+                          parseInt(task.priority.priority)
+                        )}
+                      >
+                        <Flag className="w-3 h-3 mr-1" />
+                        {getPriorityText(parseInt(task.priority.priority))}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
 
           {/* Description */}
-          <div className="card p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
-            <div className="prose max-w-none">
-              {task.description ? (
-                <p className="text-gray-700 whitespace-pre-wrap">{task.description}</p>
-              ) : (
-                <p className="text-gray-500 italic">No description provided</p>
-              )}
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Description</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="prose max-w-none">
+                {task.description ? (
+                  <p className="text-foreground whitespace-pre-wrap leading-relaxed">
+                    {task.description}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground italic">
+                    No description provided
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Custom Fields */}
           {task.custom_fields && task.custom_fields.length > 0 && (
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Custom Fields</h3>
-              <div className="space-y-3">
-                {task.custom_fields.map((field, index) => (
-                  <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-                    <span className="text-gray-600">{field.name}</span>
-                    <span className="text-gray-900 font-medium">{field.value || 'Not set'}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Fields</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {task.custom_fields.map((field, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center py-3 border-b border-border last:border-b-0"
+                    >
+                      <span className="text-muted-foreground font-medium">
+                        {field.name}
+                      </span>
+                      <span className="text-foreground">
+                        {field.value || "Not set"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Status & Priority */}
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Status & Priority</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(task.status.status)}`}>
-                  {task.status.status}
+          {/* Timeline */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Timeline
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between py-2">
+                <span className="text-muted-foreground text-sm">Created</span>
+                <span className="text-sm font-medium">
+                  {new Date(parseInt(task.date_created)).toLocaleDateString()}
                 </span>
               </div>
-              
-              {task.priority && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                  <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${getPriorityColor(parseInt(task.priority.priority))}`}>
-                    {getPriorityText(parseInt(task.priority.priority))}
+
+              {task.start_date && (
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-muted-foreground text-sm">
+                    Start Date
+                  </span>
+                  <span className="text-sm font-medium">
+                    {new Date(parseInt(task.start_date)).toLocaleDateString()}
                   </span>
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* Dates */}
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Timeline</h3>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2 text-gray-600">
-                <Calendar className="w-4 h-4" />
-                <span className="text-sm">Created: {new Date(parseInt(task.date_created)).toLocaleDateString()}</span>
-              </div>
-              
-              {task.start_date && (
-                <div className="flex items-center space-x-2 text-gray-600">
-                  <CheckSquare className="w-4 h-4" />
-                  <span className="text-sm">Start: {new Date(parseInt(task.start_date)).toLocaleDateString()}</span>
-                </div>
-              )}
-              
               {task.due_date && (
-                <div className="flex items-center space-x-2 text-gray-600">
-                  <Target className="w-4 h-4" />
-                  <span className="text-sm">Due: {new Date(parseInt(task.due_date)).toLocaleDateString()}</span>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-muted-foreground text-sm">
+                    Due Date
+                  </span>
+                  <span className="text-sm font-medium">
+                    {new Date(parseInt(task.due_date)).toLocaleDateString()}
+                  </span>
                 </div>
               )}
-              
-              <div className="flex items-center space-x-2 text-gray-600">
-                <Clock className="w-4 h-4" />
-                <span className="text-sm">Updated: {new Date(parseInt(task.date_updated)).toLocaleDateString()}</span>
+
+              <div className="flex items-center justify-between py-2">
+                <span className="text-muted-foreground text-sm">
+                  Last Updated
+                </span>
+                <span className="text-sm font-medium">
+                  {new Date(parseInt(task.date_updated)).toLocaleDateString()}
+                </span>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Assignees */}
           {task.assignees && task.assignees.length > 0 && (
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Assignees</h3>
-              <div className="space-y-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Assignees
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 {task.assignees.map((assignee) => (
-                  <div key={assignee.id} className="flex items-center space-x-3">
+                  <div
+                    key={assignee.id}
+                    className="flex items-center space-x-3 p-3 rounded-lg bg-muted/30"
+                  >
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white font-semibold"
-                      style={{ backgroundColor: assignee.color }}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm text-white font-bold shadow-sm"
+                      style={{ backgroundColor: assignee.color || "#6B7280" }}
                     >
-                      {(assignee.username || 'U').charAt(0).toUpperCase()}
+                      {(assignee.username || "U").charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{assignee.username || 'Unknown User'}</div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-foreground">
+                        {assignee.username || "Unknown User"}
+                      </div>
                       {assignee.email && (
-                        <div className="text-xs text-gray-500">{assignee.email}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {assignee.email}
+                        </div>
                       )}
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Time Tracking */}
-          {(task.time_estimate || task.time_spent) && (
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Time Tracking</h3>
-              <div className="space-y-3">
+          {(task.time_estimate || task.time_spent || task.points) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Timer className="w-5 h-5" />
+                  Time & Points
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 {task.time_estimate && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Estimated:</span>
-                    <span className="text-gray-900 font-medium">{formatTime(task.time_estimate)}</span>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-muted-foreground text-sm">
+                      Estimated
+                    </span>
+                    <span className="text-sm font-medium">
+                      {formatTime(task.time_estimate)}
+                    </span>
                   </div>
                 )}
                 {task.time_spent && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Spent:</span>
-                    <span className="text-gray-900 font-medium">{formatTime(task.time_spent)}</span>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-muted-foreground text-sm">
+                      Time Spent
+                    </span>
+                    <span className="text-sm font-medium">
+                      {formatTime(task.time_spent)}
+                    </span>
                   </div>
                 )}
                 {task.points && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Points:</span>
-                    <span className="text-gray-900 font-medium">{task.points}</span>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-muted-foreground text-sm">
+                      Story Points
+                    </span>
+                    <Badge variant="outline">{task.points}</Badge>
                   </div>
                 )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Tags */}
           {task.tags && task.tags.length > 0 && (
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Tags</h3>
-              <div className="flex flex-wrap gap-2">
-                {task.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 text-xs font-medium rounded"
-                    style={{ 
-                      backgroundColor: tag.tag_bg,
-                      color: tag.tag_fg 
-                    }}
-                  >
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Tag className="w-5 h-5" />
+                  Tags
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {task.tags.map((tag, index) => (
+                    <Badge
+                      key={index}
+                      variant="outline"
+                      className="text-xs"
+                      style={{
+                        backgroundColor: tag.tag_bg + "20",
+                        color: tag.tag_fg,
+                        borderColor: tag.tag_bg,
+                      }}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Location Info */}
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Location</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <div>List: <span className="text-gray-900 font-medium">{task.list.name}</span></div>
-              <div>Project: <span className="text-gray-900 font-medium">{task.project.name}</span></div>
-              <div>Folder: <span className="text-gray-900 font-medium">{task.folder.name}</span></div>
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Location
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center py-2">
+                <span className="text-muted-foreground text-sm">List</span>
+                <span className="text-sm font-medium">{task.list.name}</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-muted-foreground text-sm">Project</span>
+                <span className="text-sm font-medium">{task.project.name}</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-muted-foreground text-sm">Folder</span>
+                <span className="text-sm font-medium">{task.folder.name}</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
-  Home,
   ArrowLeft,
   Settings,
   User,
   LogOut,
   ChevronDown,
+  CheckSquare,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { ThemeToggle } from "./theme-toggle";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -68,86 +71,94 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     ? breadcrumbs[breadcrumbs.length - 2].path
     : "/workspaces";
 
-  const getRoleBadgeColor = (role?: string) => {
-    switch (role) {
-      case "ADMIN":
-        return "bg-red-100 text-red-800";
-      case "EDITOR":
-        return "bg-blue-100 text-blue-800";
-      case "VIEWER":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               {/* Logo */}
-              <Link to="/workspaces" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-clickup-primary rounded-lg flex items-center justify-center">
-                  <Home className="w-5 h-5 text-white" />
+              <Link
+                to="/workspaces"
+                className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+              >
+                <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shadow-sm">
+                  <CheckSquare className="w-5 h-5 text-primary-foreground" />
                 </div>
-                <span className="text-xl font-bold text-gray-900">
-                  ClickUp Manager
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-lg font-bold text-foreground">
+                    ClickUp Manager
+                  </span>
+                  <span className="text-xs text-muted-foreground -mt-1">
+                    Task Management
+                  </span>
+                </div>
               </Link>
 
               {/* Back Button */}
               {canGoBack && (
-                <Link
-                  to={previousPath}
-                  className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back</span>
-                </Link>
+                <div className="hidden sm:block">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Link to={previousPath} className="flex items-center gap-2">
+                      <ArrowLeft className="w-4 h-4" />
+                      Back
+                    </Link>
+                  </Button>
+                </div>
               )}
             </div>
 
             {/* User Menu */}
-            <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <Settings className="w-5 h-5" />
-              </button>
+            <div className="flex items-center space-x-3">
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
 
               <div className="relative">
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center space-x-2 p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                  className="flex items-center gap-2 px-3"
                 >
-                  <User className="w-5 h-5" />
-                  <span className="text-sm font-medium">{user?.email}</span>
+                  <div className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="hidden sm:flex flex-col items-start">
+                    <span className="text-sm font-medium">{user?.email}</span>
+                  </div>
                   <ChevronDown className="w-4 h-4" />
-                </button>
+                </Button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                    <div className="py-1">
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">
-                          {user?.email}
-                        </p>
-                        <span
-                          className={`inline-flex mt-1 px-2 py-0.5 text-xs font-medium rounded-full ${getRoleBadgeColor(
-                            user?.role
-                          )}`}
-                        >
-                          {user?.role}
-                        </span>
-                      </div>
-                      <button
+                  <div className="absolute right-0 mt-2 w-64 bg-card rounded-lg shadow-lg ring-1 ring-border z-50">
+                    <div className="p-4 border-b border-border">
+                      <p className="text-sm font-medium text-card-foreground">
+                        {user?.email}
+                      </p>
+                      <Badge variant="secondary" className="mt-2">
+                        {user?.role}
+                      </Badge>
+                    </div>
+                    <div className="p-2">
+                      <Button
+                        variant="ghost"
                         onClick={handleLogout}
-                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <LogOut className="w-4 h-4 mr-2" />
                         Sign out
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -158,33 +169,39 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </header>
 
       {/* Breadcrumbs */}
-      {breadcrumbs.length > 0 && (
-        <nav className="bg-white border-b border-gray-200">
+      {breadcrumbs.length > 1 && (
+        <div className="border-b bg-muted/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center space-x-2 py-3 text-sm">
+            <div className="flex items-center space-x-2 py-3">
               {breadcrumbs.map((crumb, index) => (
                 <React.Fragment key={crumb.path}>
-                  {index > 0 && <span className="text-gray-400">/</span>}
-                  <Link
-                    to={crumb.path}
-                    className={`${
-                      index === breadcrumbs.length - 1
-                        ? "text-gray-900 font-medium"
-                        : "text-gray-600 hover:text-gray-900"
-                    } transition-colors`}
-                  >
-                    {crumb.name}
-                  </Link>
+                  {index > 0 && (
+                    <span className="text-muted-foreground text-sm">/</span>
+                  )}
+                  {index === breadcrumbs.length - 1 ? (
+                    <span className="text-sm font-medium text-foreground">
+                      {crumb.name}
+                    </span>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="h-auto p-1 text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      <Link to={crumb.path}>{crumb.name}</Link>
+                    </Button>
+                  )}
                 </React.Fragment>
               ))}
             </div>
           </div>
-        </nav>
+        </div>
       )}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
+        <div className="space-y-8">{children}</div>
       </main>
     </div>
   );
